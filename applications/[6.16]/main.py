@@ -5,6 +5,7 @@ import math
 #     Third-party imports
 import cv2
 
+
 SAMPLE_NAME = 'sample.jpg'
 OUTPUT_NAME = 'result.jpg'
 
@@ -12,8 +13,6 @@ SCRIPT_PATH = os.path.dirname(__file__)
 
 RESULTS_DIR = os.path.join(SCRIPT_PATH, 'results')
 PATH_TO_SAMPLE = os.path.join(SCRIPT_PATH, 'images/{}'.format(SAMPLE_NAME))
-
-
 
 
 def image_to_array(image):
@@ -117,8 +116,7 @@ if __name__ == '__main__':
 
     image_array = image_to_array(PATH_TO_SAMPLE)
     quantized_array = quantize(image_array, 10)
-    # print(image_array)
-    # cv2.imwrite(PATH_TO_RESULT, quantized_array)
+    cv2.imwrite(os.path.join(RESULTS_DIR, 'results/{}'.format(OUTPUT_NAME)), quantized_array)
     encoded_string = run_length_encoder(quantized_array)
 
     with open(os.path.join(RESULTS_DIR, 'encoded_string.txt'), "w") as \
