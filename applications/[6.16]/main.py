@@ -10,8 +10,10 @@ OUTPUT_NAME = 'result.jpg'
 
 SCRIPT_PATH = os.path.dirname(__file__)
 
+RESULTS_DIR = os.path.join(SCRIPT_PATH, 'results')
 PATH_TO_SAMPLE = os.path.join(SCRIPT_PATH, 'images/{}'.format(SAMPLE_NAME))
-PATH_TO_RESULT = os.path.join(SCRIPT_PATH, 'results/{}'.format(OUTPUT_NAME))
+
+
 
 
 def image_to_array(image):
@@ -48,17 +50,24 @@ def quantize(array, quantization_level):
 def euclidian_distance(vector_a, vector_b):
     """Calculates the euclidian distance between two vectors"""
 
-    return math.sqrt(sum([(vector_a - vector_b) ** 2 for vector_a, vector_b in zip(vector_a, vector_b)]))
+    return math.sqrt(sum([(vector_a - vector_b) for vector_a, vector_b in zip(vector_a, vector_b)]))
 
 def are_pixels_equal(pixel_1, pixel_2):
     """Checks if two RGB/Grayscale pixels are equal"""
 
     if euclidian_distance(pixel_1, pixel_2) == 0:
         return True
-    else:
-        return False
+    return False
 
-def run_length_encoder(image_array):
+def next_pixel_exists(image_width, position):
+    """Checks if theres a next pixel in the given row"""
+
+    if position + 1 > image_width - 1:
+        return False
+    return True
+
+
+def run_length_encoder(array):
     """Quantizes the image
 
     Run-length encoding (RLE) is a very simple form of lossless data
@@ -67,7 +76,7 @@ def run_length_encoder(image_array):
     single data value and count, rather than as the original run.
 
     Args:
-        image_array: Each cell/pixel represents a level a of gray
+        array: Each cell/pixel represents a level a of gray
         quantization_level: Divides each cell by this value
 
 
@@ -75,22 +84,43 @@ def run_length_encoder(image_array):
         An array with the quantized values for each cell/pixel.
     """
 
-    encoded_string = ""
+    image_height = len(array)
+    image_width = len(array[0])
 
-    # image_height = len(image_array)
-    # image_width = len(image_array[0])
-    #
-    # for row in range(0, image_height):
-    #     for column in range(0, image_width):
-    #         new_pixel = image_array[row][column] / quantization_level
-    #         image_array[row][column] = new_pixel
+    # Iit
+    # Used for producing the encoded string
+    encoded_list = []
+    encoded_list.append(str(image_height))
+    encoded_list.append(str(image_width))
+    encoded_list.append("(0,0){}".format(array[0][0]))
 
+    for row in range(1, image_height):
+        counter = 0
+        for column in range(0, image_width):
+            this_pixel = array[row][column]
+
+            if next_pixel_exists(image_width, column):
+                next_pixel = array[row][column + 1]
+
+                if are_pixels_equal(this_pixel, next_pixel):
+                    counter = counter + 1
+                else:
+                    counter = counter + 1
+                    encoded_list.append("({},{}){}".format(row, column, array[row][column]))
+
+                if counter > image_width - 1:
+                    counter = 0
+
+    return '|'.join(encoded_list)
 
 if __name__ == '__main__':
 
     image_array = image_to_array(PATH_TO_SAMPLE)
-    quantized_array = quantize(image_array, 5)
-    print(image_array)
-    cv2.imwrite(PATH_TO_RESULT, quantized_array)
+    quantized_array = quantize(image_array, 10)
+    # print(image_array)
+    # cv2.imwrite(PATH_TO_RESULT, quantized_array)
+    encoded_string = run_length_encoder(quantized_array)
 
-
+    with open(os.path.join(RESULTS_DIR, 'encoded_string.txt'), "w") as \
+            text_file:
+        print(encoded_string, file=text_file)
