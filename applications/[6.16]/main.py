@@ -86,6 +86,9 @@ def run_length_encoder(array):
     image_height = len(array)
     image_width = len(array[0])
 
+    # Convert to 1D
+    array = array.ravel()
+    print(array)
     # Iit
     # Used for producing the encoded string
     encoded_list = []
@@ -101,10 +104,8 @@ def run_length_encoder(array):
             if next_pixel_exists(image_width, column):
                 next_pixel = array[row][column + 1]
 
-                if are_pixels_equal(this_pixel, next_pixel):
-                    counter = counter + 1
-                else:
-                    counter = counter + 1
+                counter = counter + 1
+                if not are_pixels_equal(this_pixel, next_pixel):
                     encoded_list.append("({},{}){}".format(row, column, array[row][column]))
 
                 if counter > image_width - 1:
@@ -118,7 +119,7 @@ if __name__ == '__main__':
     quantized_array = quantize(image_array, 10)
     cv2.imwrite(os.path.join(RESULTS_DIR, 'results/{}'.format(OUTPUT_NAME)), quantized_array)
     encoded_string = run_length_encoder(quantized_array)
-
+    print(1)
     with open(os.path.join(RESULTS_DIR, 'encoded_string.txt'), "w") as \
             text_file:
         print(encoded_string, file=text_file)
