@@ -4,7 +4,8 @@ import math
 
 #     Third-party imports
 import cv2
-
+import numpy as np
+np.seterr(over='ignore')
 
 SAMPLE_NAME = 'sample.jpg'
 OUTPUT_NAME = 'result.jpg'
@@ -13,7 +14,7 @@ SCRIPT_PATH = os.path.dirname(__file__)
 
 RESULTS_DIR = os.path.join(SCRIPT_PATH, 'results')
 PATH_TO_SAMPLE = os.path.join(SCRIPT_PATH, 'images/{}'.format(SAMPLE_NAME))
-
+PATH_TO_RESULT = os.path.join(SCRIPT_PATH, 'results/{}'.format(OUTPUT_NAME))
 
 def image_to_array(image):
     """Return the array representation of the loaded image"""
@@ -86,9 +87,6 @@ def run_length_encoder(array):
     image_height = len(array)
     image_width = len(array[0])
 
-    # Convert to 1D
-    array = array.ravel()
-    print(array)
     # Iit
     # Used for producing the encoded string
     encoded_list = []
@@ -113,13 +111,39 @@ def run_length_encoder(array):
 
     return '|'.join(encoded_list)
 
-if __name__ == '__main__':
+def save_files(quantized_array, encoded_string):
+    quantized_array.tofile('results/quantized_array.txt',sep=" ",format="%s")
+    cv2.imwrite(PATH_TO_RESULT, quantized_array)
 
-    image_array = image_to_array(PATH_TO_SAMPLE)
-    quantized_array = quantize(image_array, 10)
-    cv2.imwrite(os.path.join(RESULTS_DIR, 'results/{}'.format(OUTPUT_NAME)), quantized_array)
-    encoded_string = run_length_encoder(quantized_array)
-    print(1)
-    with open(os.path.join(RESULTS_DIR, 'encoded_string.txt'), "w") as \
+    with open(os.path.join(RESULTS_DIR, 'encoded_quantized_string.txt'), "w") as \
             text_file:
         print(encoded_string, file=text_file)
+
+def compression_ratio():
+    size_of_quantized = os.path.getsize('results/quantized_array.txt')
+    size_of_encoded = os.path.getsize('results/encoded_quantized_string.txt')
+    return size_of_quantized/size_of_encoded
+
+if __name__ == '__main__':
+
+    print("Please place the image file into images folder with name 'sample.jpg'...")
+    try:
+        image_array = image_to_array(PATH_TO_SAMPLE)
+    except:
+        print("Error with the image file")
+        exit()
+    
+    while 1:
+        try:
+            quantization_level = input("Please enter quantization level... ")
+            quantization_level=int(quantization_level)
+            break
+        except:
+            print("Error with the input. You must select a number. Please try again...")
+
+    quantized_array = quantize(image_array, quantization_level)
+    cv2.imwrite(os.path.join(RESULTS_DIR, 'results/{}'.format(OUTPUT_NAME)), quantized_array)
+    encoded_string = run_length_encoder(quantized_array)
+
+    save_files(quantized_array, encoded_string)
+    print("Ratio of compression is: ",compression_ratio())
