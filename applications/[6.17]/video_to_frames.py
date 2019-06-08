@@ -18,8 +18,6 @@ class VideoToFramesConverter():
         success , image = self.video_capture.read()
         count = 0
         while success:
-            cv2.imwrite(os.path.join(self.save_path, f'frame{count}.jpg'),
-                        image)
+            cv2.imwrite(os.path.join(self.save_path, f'frame{count}.jpg'),image)
             success,image = self.video_capture.read()
-            print('Read a new frame: ', success)
             count += 1
