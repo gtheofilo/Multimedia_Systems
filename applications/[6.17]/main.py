@@ -5,27 +5,27 @@ import os
 import video_to_frames
 import cv2
 import numpy as np
-np.seterr(over='ignore')
+
 
 SAMPLE_NAME = 'sample.avi'
-OUTPUT_NAME = 'result.jpg'
 
 # Path of the main .py script
 SCRIPT_PATH = os.path.dirname(__file__)
+
 # Path to save the produced results
 RESULTS_PATH = os.path.join(SCRIPT_PATH, 'results')
+
 # Path of the sample to test
 PATH_TO_SAMPLE = os.path.join(SCRIPT_PATH, f'videos/{SAMPLE_NAME}')
+PATH_TO_SAMPLES = os.path.join(SCRIPT_PATH, 'videos')
 
-PATH_TO_FIRST_FRAME = os.path.join(SCRIPT_PATH,'results/frame0.jpg')
-
-PATH_TO_FINAL_RESULT = os.path.join(SCRIPT_PATH, 'final_results')
+PATH_TO_RESULTS_FOLDER = os.path.join(SCRIPT_PATH, 'results')
+PATH_TO_THE_QUANTIZED_FRAMES = os.path.join(PATH_TO_RESULTS_FOLDER, 'frames')
 
 def image_to_array(image):
     """Return the array representation of the loaded image"""
 
     return cv2.imread(image, flags=cv2.IMREAD_UNCHANGED)
-
 
 def quantize(array, quantization_level):
     """Quantizes the image
@@ -52,75 +52,81 @@ def quantize(array, quantization_level):
 
     return array
 
-def quantize_all_arrays(super_array, quantization_level):
-	array = [quantize(super_array[0],quantization_level)]
-	count=1
-	try:
-		while True:
-			array.append(quantize(super_array[count],quantization_level))
-			
-			count+=1
-	except:
-		array = np.array(array)
-		return array
+def quantize_all_arrays(matrix, quantization_level):
+	"""Applys the quantization algorithm for each frame"""
 
-def calculate_difference(image2, image1):
-	return image2-image1
+	return [quantize(item, quantization_level)for item in matrix]
 
-def calculate_all_arrays(first_image_array):
-	all_frames=[first_image_array]
-	count=0
-	try:
-		while True:
-			
-			prev_image=image_to_array(os.path.join(SCRIPT_PATH,'results/frame{}.jpg'.format(count)))
-			new_image=image_to_array(os.path.join(SCRIPT_PATH,'results/frame{}.jpg'.format(count+1)))
-			difference_array=calculate_difference(new_image,prev_image)
-			all_frames.append(difference_array)
-			count+=1
-	except:
-		all_frames = np.array(all_frames)
-		return all_frames
+def calculate_difference(image_1, image_2):
+	"""Calculates the difference between to sequencial images"""
+
+	return image_2 - image_1
+
+def calculate_differences_matrix():
+
+	differences_array = []
+
+	PATH_TO_FRAMES = os.path.join(PATH_TO_SAMPLES, 'frames')
+
+	frames_len = len(os.listdir(PATH_TO_FRAMES))
+
+	for frame_number in range(1, frames_len):
+		previous_image = image_to_array(os.path.join(PATH_TO_FRAMES, f'frame{frame_number - 1}.jpg'))
+		new_image = image_to_array(os.path.join(PATH_TO_FRAMES, f'frame{frame_number}.jpg'))
+
+		difference = calculate_difference(previous_image, new_image)
+		differences_array.append(difference)
+
+
+	all_frames = np.array(differences_array)
+
+	return all_frames
 
 def compression_ratio():
-	count = 0
-	size_of_frames=0
-	size_of_encoded=0
-	try:
-		while True:
-			size_of_frames = size_of_frames + os.path.getsize('results/frame{}.jpg'.format(count))
-			size_of_encoded = size_of_encoded + os.path.getsize('final_results/frame{}.jpg'.format(count))
-			count+=1
-	except:
-		return size_of_frames/size_of_encoded
-    
+
+	size_of_original_frames = os.path.getsize(os.path.join(PATH_TO_SAMPLES,
+														   'frames'))
+	size_of_encoded_frames = os.path.getsize(PATH_TO_THE_QUANTIZED_FRAMES)
+
+	return size_of_original_frames / size_of_encoded_frames
+
 
 if __name__ == '__main__':
-	print("Please place the video file into videos folder with name 'sample.avi'...")
-	try:
+
+	if (os.path.exists(PATH_TO_SAMPLE)):
+		PATH_TO_SAVED_FRAMES = os.path.join(SCRIPT_PATH, 'videos/frames')
+		converter = video_to_frames.VideoToFramesConverter(PATH_TO_SAMPLE,
+											   PATH_TO_SAVED_FRAMES)
+		converter.create_frames()
+		size = converter.size
 		print("Creating frames from video and save them to results folder...")
-		video_to_frames.VideoToFramesConverter(PATH_TO_SAMPLE,RESULTS_PATH).create_frames()
-	except:
-		print("Error with the video file")
+	else:
+		print(
+			"Place the video file named 'sample.avi' into /videos and try "
+			"again...")
+		enter_to_exit = input()
 		exit()
 
-	while True:
-		try:
-			quantization_level = input("Please enter quantization level... ")
-			quantization_level = int(quantization_level)
-			break
-		except:
-			print("Error with the input. You must select a number. Please try again...")
+	quantization_level = int(input("Please enter quantization "
+										   "level..."))
+
 	print("Creating array with all frames based on DPCM algorithm...")
-	all_frames = calculate_all_arrays(image_to_array(PATH_TO_FIRST_FRAME))
-	print("Quantilize all encoded frames (this step may take a while)...")
-	quantized_frames = quantize_all_arrays(all_frames, quantization_level)
+	differences_matrix = calculate_differences_matrix()
+
+	print("Quantize all encoded frames (this step may take a while)...")
+	quantized_frames = quantize_all_arrays(differences_matrix, quantization_level)
+
 	print("Saving new frames to final_results folder...")
-	try:
-		count=0
-		while True:
-			cv2.imwrite(os.path.join(PATH_TO_FINAL_RESULT, f'frame{count}.jpg'),quantized_frames[count])
-			count+=1
-	except:
-		print("Compression Ratio is: ",compression_ratio())
+
+	out = cv2.VideoWriter('final.avi', cv2.VideoWriter_fourcc(*'DIVX'),
+						  30, size)
+
+	for index, frame in enumerate(quantized_frames):
+		cv2.imwrite(os.path.join(PATH_TO_THE_QUANTIZED_FRAMES, f'frame{index}.jpg'),
+						frame)
+
+		out.write(frame)
+	out.release()
+
+	print("Compression Ratio is: ",compression_ratio())
 	input("Done")
