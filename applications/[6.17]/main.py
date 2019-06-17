@@ -18,9 +18,17 @@ RESULTS_PATH = os.path.join(SCRIPT_PATH, 'results')
 # Path of the sample to test
 PATH_TO_SAMPLE = os.path.join(SCRIPT_PATH, f'videos/{SAMPLE_NAME}')
 PATH_TO_SAMPLES = os.path.join(SCRIPT_PATH, 'videos')
+PATH_TO_FRAMES = os.path.join(PATH_TO_SAMPLES, 'frames')
 
 PATH_TO_RESULTS_FOLDER = os.path.join(SCRIPT_PATH, 'results')
 PATH_TO_THE_QUANTIZED_FRAMES = os.path.join(PATH_TO_RESULTS_FOLDER, 'frames')
+
+def erase_directyory(path):
+	"""Erases the content of the given directory"""
+
+	filelist = [f for f in os.listdir(path) if f.endswith(".jpg")]
+	for f in filelist:
+		os.remove(os.path.join(path, f))
 
 def image_to_array(image):
     """Return the array representation of the loaded image"""
@@ -84,14 +92,18 @@ def calculate_differences_matrix():
 
 def compression_ratio():
 
-	size_of_original_frames = os.path.getsize(os.path.join(PATH_TO_SAMPLES,
-														   'frames'))
-	size_of_encoded_frames = os.path.getsize(PATH_TO_THE_QUANTIZED_FRAMES)
+	size_of_original_frames = os.path.getsize(PATH_TO_FRAMES)
+	size_of_the_compressed = os.path.getsize(PATH_TO_THE_QUANTIZED_FRAMES)
 
-	return size_of_original_frames / size_of_encoded_frames
+	print(f'Size of the original data: {size_of_original_frames}')
+	print(f'Size of the compressed data: {size_of_the_compressed}')
+
+	return size_of_original_frames / size_of_the_compressed
 
 
 if __name__ == '__main__':
+	erase_directyory(PATH_TO_FRAMES)
+	erase_directyory(PATH_TO_THE_QUANTIZED_FRAMES)
 
 	if (os.path.exists(PATH_TO_SAMPLE)):
 		PATH_TO_SAVED_FRAMES = os.path.join(SCRIPT_PATH, 'videos/frames')
@@ -116,10 +128,10 @@ if __name__ == '__main__':
 	print("Quantize all encoded frames (this step may take a while)...")
 	quantized_frames = quantize_all_arrays(differences_matrix, quantization_level)
 
-	print("Saving new frames to final_results folder...")
+	print("Saving new frames to results folder...")
 
 	out = cv2.VideoWriter('final.avi', cv2.VideoWriter_fourcc(*'DIVX'),
-						  30, size)
+						  30, (1280, 720))
 
 	for index, frame in enumerate(quantized_frames):
 		cv2.imwrite(os.path.join(PATH_TO_THE_QUANTIZED_FRAMES, f'frame{index}.jpg'),
@@ -128,5 +140,5 @@ if __name__ == '__main__':
 		out.write(frame)
 	out.release()
 
-	print("Compression Ratio is: ",compression_ratio())
+	print(f'Compression Ratio is: {compression_ratio()}')
 	input("Done")
