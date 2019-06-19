@@ -112,6 +112,8 @@ def run_length_encoder(array):
     return '|'.join(encoded_list)
 
 def save_files(quantized_array, encoded_string):
+    """Saves the RL-Encoded string"""
+
     quantized_array.tofile('results/quantized_array.txt',sep=" ",format="%s")
     cv2.imwrite(PATH_TO_RESULT, quantized_array)
 
@@ -120,6 +122,8 @@ def save_files(quantized_array, encoded_string):
         print(encoded_string, file=text_file)
 
 def compression_ratio():
+    """Calculates the compression ratio"""
+
     size_of_quantized = os.path.getsize('results/quantized_array.txt')
     size_of_encoded = os.path.getsize('results/encoded_quantized_string.txt')
     return size_of_quantized/size_of_encoded

@@ -37,30 +37,36 @@ def image_to_array(image):
 
 
 def calculate_difference(image2, image1):
+    """Calculates the error """
+
     return image2 - image1
 
-
-def apply_histogram(block):
-    h, b = np.histogram(block.flatten(), 256, normed=True)
-    cdf = h.cumsum()
-    cdf = 255 * cdf / cdf[-1]
-    return np.interp(block.flatten(), b[:-1], cdf).reshape(block.shape)
-
-
 def frame_to_macroblock(frame):
-    block_img = np.zeros(frame.shape)
-    im_h, im_w = frame.shape[:2]
+    """Converts a frame to 16x16 macroblocks"""
+
+    image = frame
+
+    block = np.zeros(frame.shape)
+
+    image_height, image_width = frame.shape[:2]
+
     block_height = 16
+
     block_width = 16
 
-    for row in np.arange(im_h - block_height + 1, step=block_height):
-        for col in np.arange(im_w - block_width + 1, step=block_width):
-            block_img[row:row + block_height,
-            col:col + block_width] = apply_histogram(
-                frame[row:row + block_height, col:col + block_width])
+    for row in np.arange(image_height - block_height + 1, step=block_width):
+
+        for column in np.arange(image_width - block_width + 1, step=block_width):
+
+            block[row:row + block_height, column:column + block_width] = image[
+                                                                     row:row + block_height, column:column + block_width]
+    return block
+
 
 
 def calculate_all_arrays(first_image_array):
+    """Calculates the difference"""
+
     all_frames = [first_image_array]
     count = 0
     try:
@@ -75,10 +81,13 @@ def calculate_all_arrays(first_image_array):
             count += 1
     except:
         all_frames = np.array(all_frames)
+
         return all_frames
 
 
 def save_video(frames):
+    """Saves the DPCM encoded video"""
+
     height, width, layers = frames[0].shape
     video = cv2.VideoWriter(os.path.join(PATH_TO_FIRST_BULLET, 'result.avi'),
                             cv2.VideoWriter_fourcc(*'XVID'),
@@ -106,15 +115,12 @@ def bullet_1():
         save_video(all_frames)
 
 
-def bullet_2():
-    pass
-
-
 if __name__ == '__main__':
     video = video_to_frames.VideoToFramesConverter(PATH_TO_SAMPLE,
                                                    PATH_TO_FRAMES)
     video.create_frames()
 
     bullet_1()
+
 
 

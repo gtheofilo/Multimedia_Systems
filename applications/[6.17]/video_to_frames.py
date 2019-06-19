@@ -13,7 +13,6 @@ class VideoToFramesConverter():
         self.save_path = save_path
         self.video_capture = cv2.VideoCapture(self.sample_path)
         self.width = self.video_capture.get(cv2.CAP_PROP_FRAME_WIDTH)
-        cv2
         self.height = self.video_capture.get(cv2.CAP_PROP_FRAME_HEIGHT)
         self.size = self.width, self.height
 
