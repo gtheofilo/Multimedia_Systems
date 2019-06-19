@@ -71,6 +71,7 @@ def calculate_difference(image_1, image_2):
 	return image_2 - image_1
 
 def calculate_differences_matrix():
+	"""Performs DPCM """
 
 	differences_array = []
 
@@ -91,6 +92,7 @@ def calculate_differences_matrix():
 	return all_frames
 
 def compression_ratio():
+	"""Calculates the compression ration"""
 
 	size_of_original_frames = os.path.getsize(PATH_TO_FRAMES)
 	size_of_the_compressed = os.path.getsize(PATH_TO_THE_QUANTIZED_FRAMES)
